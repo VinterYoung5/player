@@ -15,13 +15,24 @@
         android:layout_height="400dp" />
 
     <ImageButton
+        android:id="@+id/imageButton_open"
+        android:layout_width="65dp"
+        android:layout_height="65dp"
+        app:srcCompat="@drawable/open_foreground"
+        tools:layout_editor_absoluteX="0dp"
+        tools:layout_editor_absoluteY="665dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        />
+
+    <ImageButton
         android:id="@+id/imageButton_start"
         android:layout_width="65dp"
         android:layout_height="65dp"
         app:srcCompat="@drawable/play_foreground"
         tools:layout_editor_absoluteX="0dp"
         tools:layout_editor_absoluteY="665dp"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintStart_toEndOf="@id/imageButton_open"
         app:layout_constraintBottom_toBottomOf="parent"
         />
 

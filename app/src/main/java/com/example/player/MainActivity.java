@@ -3,10 +3,15 @@ package com.example.player;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.AssetFileDescriptor;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -23,11 +28,13 @@ public class MainActivity extends AppCompatActivity {
     public static final int SEEK_NEXT_SYNC        = 0x01;
     public static final int SEEK_CLOSEST_SYNC     = 0x02;
     public static final int SEEK_CLOSEST          = 0x03;
+    public static final int REQUEST_CODE_SELECT_VIDEO = 0x100;
     private static final String TAG = "Yangwen";
+    private  String url;
     private SurfaceView surfaceView;
     private MediaPlayer player;
     private SurfaceHolder holder;
-    private ImageButton btn_start, btn_stop ,btn_pause;
+    private ImageButton btn_open, btn_start, btn_stop ,btn_pause;
     private Context context;
     enum playState {
         IDLE,
@@ -75,6 +82,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
     private void initView(){
+        btn_open  = findViewById(R.id.imageButton_open);
         btn_start = findViewById(R.id.imageButton_start);
         btn_stop  = findViewById(R.id.imageButton_stop);
         btn_pause = findViewById(R.id.imageButton_pause);
@@ -82,6 +90,7 @@ public class MainActivity extends AppCompatActivity {
         btn_start.setOnClickListener(new MyOnClickListener());
         btn_stop.setOnClickListener(new MyOnClickListener());
         btn_pause.setOnClickListener(new MyOnClickListener());
+        btn_open.setOnClickListener(new MyOnClickListener());
     }
 
     private void initPlayer(){
@@ -159,6 +168,38 @@ public class MainActivity extends AppCompatActivity {
             } else if (view.getId()==R.id.imageButton_pause) {
                 playerPause();
                 Toast.makeText(MainActivity.this,"onClick pause",Toast.LENGTH_SHORT).show();
+            } else if (view.getId()==R.id.imageButton_open){
+                Intent intent = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Video.Media.EXTERNAL_CONTENT_URI);
+                intent.setDataAndType(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, "video/*");
+                startActivityForResult(intent, REQUEST_CODE_SELECT_VIDEO);
+            }
+        }
+    }
+
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (resultCode == Activity.RESULT_OK) {
+            if (requestCode == REQUEST_CODE_SELECT_VIDEO) {
+                Uri uri = data.getData();
+                if (uri != null) {
+                    Cursor cursor = getContentResolver().query(uri, null, null, null, null);
+                    if (cursor != null) {
+                        cursor.moveToFirst();
+                        url = cursor.getString(cursor.getColumnIndex(MediaStore.Video.Media.DATA));
+                        if (url != null) {
+                            //mEdit_file_path.setText(url);
+                        }
+                        long size = cursor.getLong(cursor.getColumnIndex(MediaStore.Video.Media.SIZE));
+                        long duration = cursor.getLong(cursor.getColumnIndex(MediaStore.Video.Media.DURATION));
+                        int width = cursor.getInt(cursor.getColumnIndex(MediaStore.Video.Media.WIDTH));
+                        int height = cursor.getInt(cursor.getColumnIndex(MediaStore.Video.Media.HEIGHT));
+                        //mText_resolution.setText(width + "x" + height);
+                        //mText_duration.setText(getStrTime(duration));
+                        //mText_size.setText(getVideoSize(size));
+                        //mLinerLayout_video_infomation.setVisibility(View.VISIBLE);
+                        Toast.makeText(MainActivity.this,"onClick url" +url,Toast.LENGTH_SHORT).show();
+                        cursor.close();
+                    }
+                }
             }
         }
     }
@@ -187,10 +228,14 @@ public class MainActivity extends AppCompatActivity {
 
             if (mPlayMode == playMode.modeMediaplayer) {
                 try {
-                    //String uri = "/storage/emulated/0/test.mp4";
-                    //player.setDataSource(uri);
-                    AssetFileDescriptor fileDescriptor = getAssets().openFd("test.mp4");
-                    player.setDataSource(fileDescriptor.getFileDescriptor(),fileDescriptor.getStartOffset(), fileDescriptor.getLength());
+                    //String url = "/storage/emulated/0/test.mp4";
+                    //player.setDataSource(url);
+                    if (url == null) {
+                        AssetFileDescriptor fileDescriptor = getAssets().openFd("test.mp4");
+                        player.setDataSource(fileDescriptor.getFileDescriptor(), fileDescriptor.getStartOffset(), fileDescriptor.getLength());
+                    } else {
+                        player.setDataSource(url);
+                    }
                     player.prepare();
                     mState = playState.PREPARING;
 
