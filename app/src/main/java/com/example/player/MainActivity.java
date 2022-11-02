@@ -3,6 +3,7 @@ package com.example.player;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -11,6 +12,8 @@ import android.content.res.AssetFileDescriptor;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.SurfaceHolder;
@@ -24,10 +27,7 @@ import android.widget.Toast;
 import java.io.IOException;
 
 public class MainActivity extends AppCompatActivity {
-    public static final int SEEK_PREVIOUS_SYNC    = 0x00;
-    public static final int SEEK_NEXT_SYNC        = 0x01;
-    public static final int SEEK_CLOSEST_SYNC     = 0x02;
-    public static final int SEEK_CLOSEST          = 0x03;
+
     public static final int REQUEST_CODE_SELECT_VIDEO = 0x100;
     private static final String TAG = "Yangwen";
     private  String url;
@@ -92,6 +92,20 @@ public class MainActivity extends AppCompatActivity {
         btn_pause.setOnClickListener(new MyOnClickListener());
         btn_open.setOnClickListener(new MyOnClickListener());
     }
+    private Handler handler = new Handler(new Handler.Callback() {
+        @Override
+        public boolean handleMessage(Message msg) {
+            switch (msg.what) {
+                case 0:
+                    break;
+                case 1:
+                    break;
+                default:
+                    break;
+            }
+            return false;
+        }
+    });
 
     private void initPlayer(){
         surfaceView = (SurfaceView) findViewById(R.id.surfaceView);
@@ -115,7 +129,7 @@ public class MainActivity extends AppCompatActivity {
             public void onCompletion(MediaPlayer mp) {
                 Log.d(TAG,"onCompletion");
                 mState = playState.PLAYBACKCOMPLETED;
-                player.seekTo(0, SEEK_PREVIOUS_SYNC);
+                player.seekTo(0, MediaPlayer.SEEK_PREVIOUS_SYNC);
                 player.start();
                 mState = playState.STARTED;
                 Toast.makeText(MainActivity.this,"onCompletion "+ mState,Toast.LENGTH_SHORT).show();
@@ -176,7 +190,9 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    @SuppressLint("Range")
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
         if (resultCode == Activity.RESULT_OK) {
             if (requestCode == REQUEST_CODE_SELECT_VIDEO) {
                 Uri uri = data.getData();
@@ -184,19 +200,24 @@ public class MainActivity extends AppCompatActivity {
                     Cursor cursor = getContentResolver().query(uri, null, null, null, null);
                     if (cursor != null) {
                         cursor.moveToFirst();
+
                         url = cursor.getString(cursor.getColumnIndex(MediaStore.Video.Media.DATA));
                         if (url != null) {
                             //mEdit_file_path.setText(url);
                         }
+                        @SuppressLint("Range")
                         long size = cursor.getLong(cursor.getColumnIndex(MediaStore.Video.Media.SIZE));
+                        @SuppressLint("Range")
                         long duration = cursor.getLong(cursor.getColumnIndex(MediaStore.Video.Media.DURATION));
+                        @SuppressLint("Range")
                         int width = cursor.getInt(cursor.getColumnIndex(MediaStore.Video.Media.WIDTH));
+                        @SuppressLint("Range")
                         int height = cursor.getInt(cursor.getColumnIndex(MediaStore.Video.Media.HEIGHT));
                         //mText_resolution.setText(width + "x" + height);
                         //mText_duration.setText(getStrTime(duration));
                         //mText_size.setText(getVideoSize(size));
                         //mLinerLayout_video_infomation.setVisibility(View.VISIBLE);
-                        Toast.makeText(MainActivity.this,"onClick url" +url,Toast.LENGTH_SHORT).show();
+                        Toast.makeText(MainActivity.this, "onClick url :" + url, Toast.LENGTH_SHORT).show();
                         cursor.close();
                     }
                 }
