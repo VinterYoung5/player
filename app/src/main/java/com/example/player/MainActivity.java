@@ -2,19 +2,23 @@ package com.example.player;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.widget.ConstraintLayout;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.res.AssetFileDescriptor;
 import android.database.Cursor;
+import android.media.MediaFormat;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.provider.MediaStore;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -50,10 +54,15 @@ public class MainActivity extends AppCompatActivity {
     enum playMode {
         modeMediaplayer,
         modeMediacodec,
-        modeFFmpeg,
-        modeEnd;
+        modeFFmpeg;
     }
     playMode mPlayMode = playMode.modeMediaplayer;
+    enum cycleMode  {
+        cycleNone,
+        cycleSingle,
+        cycleAll;
+    }
+    private cycleMode cyclePlay = cycleMode.cycleNone;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -61,7 +70,7 @@ public class MainActivity extends AppCompatActivity {
         Permission permission = new Permission();
         permission.checkPermissions(this);
         initView();
-        initPlayer();
+        //initPlayer();
     }
     @Override
     protected void onDestroy() {
@@ -91,6 +100,7 @@ public class MainActivity extends AppCompatActivity {
         btn_stop.setOnClickListener(new MyOnClickListener());
         btn_pause.setOnClickListener(new MyOnClickListener());
         btn_open.setOnClickListener(new MyOnClickListener());
+
     }
     private Handler handler = new Handler(new Handler.Callback() {
         @Override
@@ -111,7 +121,9 @@ public class MainActivity extends AppCompatActivity {
         surfaceView = (SurfaceView) findViewById(R.id.surfaceView);
         player = new MediaPlayer();
         holder = surfaceView.getHolder();
-        holder.addCallback(new MyCallBack());
+        holder.setKeepScreenOn(true);
+        //holder.addCallback(new MyCallBack());
+        player.setDisplay(holder);
         mState = playState.IDLE;
         player.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
             @Override
@@ -129,17 +141,19 @@ public class MainActivity extends AppCompatActivity {
             public void onCompletion(MediaPlayer mp) {
                 Log.d(TAG,"onCompletion");
                 mState = playState.PLAYBACKCOMPLETED;
-                player.seekTo(0, MediaPlayer.SEEK_PREVIOUS_SYNC);
-                player.start();
-                mState = playState.STARTED;
+                if (cyclePlay == cycleMode.cycleSingle) {
+                    player.seekTo(0, MediaPlayer.SEEK_PREVIOUS_SYNC);
+                    player.start();
+                    mState = playState.STARTED;
+                }
                 Toast.makeText(MainActivity.this,"onCompletion "+ mState,Toast.LENGTH_SHORT).show();
             }
         });
         player.setOnVideoSizeChangedListener(new MediaPlayer.OnVideoSizeChangedListener(){
             @Override
             public void onVideoSizeChanged(MediaPlayer mp, int width, int height){
-                Log.d(TAG,"onVideoSizeChanged, w:" +  width+" h:" + height);
-                //mState = playState.PREPARED;
+                Toast.makeText(MainActivity.this,"onVideoSizeChanged, w:" +  width+" h:" + height,Toast.LENGTH_SHORT).show();
+                setSurfaceViewSize(width, height);
             }
         });
         player.setOnSeekCompleteListener(new MediaPlayer.OnSeekCompleteListener(){
@@ -169,7 +183,7 @@ public class MainActivity extends AppCompatActivity {
             player = null;
         }
     }
-    //定义按钮点击监听器
+
     class MyOnClickListener implements View.OnClickListener{
         @Override
         public void onClick(View view) {
@@ -228,16 +242,41 @@ public class MainActivity extends AppCompatActivity {
     private class MyCallBack implements SurfaceHolder.Callback {
         @Override
         public void surfaceCreated(SurfaceHolder holder) {
-            player.setDisplay(holder);
+            //player.setDisplay(holder);
         }
         @Override
         public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) { }
         @Override
         public void surfaceDestroyed(SurfaceHolder holder) { }
     }
+    private void setSurfaceViewSize(int videoWidth, int videoHeight){
 
+        DisplayMetrics dm = getResources().getDisplayMetrics();
+        System.out.println("heigth2 : " + dm.heightPixels);
+        System.out.println("width2 : " + dm.widthPixels);
+        //int surfaceWidth = surfaceView.getWidth();
+        //int surfaceHeight = surfaceView.getHeight();
+        int surfaceWidth = dm.widthPixels;
+        int surfaceHeight = dm.heightPixels;
+                Toast.makeText(MainActivity.this,"onVideoSizeChanged, w:" +  surfaceWidth+" h:" + surfaceHeight+" orien:"+getResources().getConfiguration().orientation,Toast.LENGTH_SHORT).show();
+        Log.d(TAG,"onVideoSizeChanged, w:" +  surfaceWidth+" h:" + surfaceHeight
+                +" match_parent "+ConstraintLayout.LayoutParams.MATCH_PARENT
+                +" orien:"+getResources().getConfiguration().orientation);
+        //MediaFormat.KEY_ROTATION
+        float max;
+        if (getResources().getConfiguration().orientation == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT) {
+            max = Math.max((float) videoWidth / (float) surfaceWidth, (float) videoHeight / (float) surfaceHeight);
+        } else {
+            max = Math.max(((float) videoWidth / (float) surfaceHeight), (float) videoHeight / (float) surfaceWidth);
+        }
+        int displayWidth = (int) Math.ceil((float) videoWidth / max);
+        int displayHeight = (int) Math.ceil((float) videoHeight / max);
+        ConstraintLayout.LayoutParams params2 = new ConstraintLayout.LayoutParams(displayWidth, displayHeight);
+
+        surfaceView.setLayoutParams(params2);
+    }
     private void playerStart() {
-
+        initPlayer();
         Log.d(TAG,"playerStart " + mState);
         if (mState == playState.STARTED) {
             return;
