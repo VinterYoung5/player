@@ -50,7 +50,7 @@ public class MainActivity extends AppCompatActivity {
         STOPED,
         ERROR;
     };
-    private playState mState = playState.STOPED;
+    private playState mState = playState.IDLE;
     enum playMode {
         modeMediaplayer,
         modeMediacodec,
@@ -124,7 +124,7 @@ public class MainActivity extends AppCompatActivity {
         holder.setKeepScreenOn(true);
         //holder.addCallback(new MyCallBack());
         player.setDisplay(holder);
-        mState = playState.IDLE;
+        //mState = playState.IDLE;
         player.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
             @Override
             public void onPrepared(MediaPlayer mp) {
@@ -145,6 +145,8 @@ public class MainActivity extends AppCompatActivity {
                     player.seekTo(0, MediaPlayer.SEEK_PREVIOUS_SYNC);
                     player.start();
                     mState = playState.STARTED;
+                } else if (cyclePlay == cycleMode.cycleNone) {
+                    playerStop();
                 }
                 Toast.makeText(MainActivity.this,"onCompletion "+ mState,Toast.LENGTH_SHORT).show();
             }
@@ -276,7 +278,7 @@ public class MainActivity extends AppCompatActivity {
         surfaceView.setLayoutParams(params2);
     }
     private void playerStart() {
-        initPlayer();
+
         Log.d(TAG,"playerStart " + mState);
         if (mState == playState.STARTED) {
             return;
@@ -287,6 +289,7 @@ public class MainActivity extends AppCompatActivity {
         } else if (mState == playState.IDLE) {
 
             if (mPlayMode == playMode.modeMediaplayer) {
+                initPlayer();
                 try {
                     //String url = "/storage/emulated/0/test.mp4";
                     //player.setDataSource(url);
@@ -322,12 +325,12 @@ public class MainActivity extends AppCompatActivity {
     }
 */
     private void playerStop() {
-        Log.d(TAG,"playerstop " + mState);
+        Log.d(TAG,"playerStop " + mState);
         if (mState == playState.IDLE && mState != playState.STOPED) {
             return;
         }
         player.stop();
-        mState = playState.STOPED;
+        player.reset();
         player.release();
         mState = playState.IDLE;
     }
