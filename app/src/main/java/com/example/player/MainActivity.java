@@ -29,10 +29,13 @@ import android.widget.ImageButton;
 import android.widget.Toast;
 
 import java.io.IOException;
-
+import android.widget.SeekBar;
+import android.widget.SeekBar.OnSeekBarChangeListener;
+import android.widget.TextView;
 public class MainActivity extends AppCompatActivity {
 
     public static final int REQUEST_CODE_SELECT_VIDEO = 0x100;
+    private static final int MSG_UPDATE_PLAYPOSITION = 0x1000;
     private static final String TAG = "Yangwen";
     private  String url;
     private SurfaceView surfaceView;
@@ -40,6 +43,9 @@ public class MainActivity extends AppCompatActivity {
     private SurfaceHolder holder;
     private ImageButton btn_open, btn_start, btn_stop ,btn_pause;
     private Context context;
+    private SeekBar seekbar;
+    private TextView tv_playpos,tv_seekpos,tv_filedur;
+    public int filedurtion;
     enum playState {
         IDLE,
         PREPARING,
@@ -71,6 +77,7 @@ public class MainActivity extends AppCompatActivity {
         permission.checkPermissions(this);
         initView();
         //initPlayer();
+        new Thread(new playerRunnable()).start();
     }
     @Override
     protected void onDestroy() {
@@ -95,18 +102,33 @@ public class MainActivity extends AppCompatActivity {
         btn_start = findViewById(R.id.imageButton_start);
         btn_stop  = findViewById(R.id.imageButton_stop);
         btn_pause = findViewById(R.id.imageButton_pause);
+        tv_playpos = findViewById(R.id.textView_playpos);
+        tv_seekpos = findViewById(R.id.textView_seekpos);
+        tv_filedur = findViewById(R.id.textView_filedurtion);
+        seekbar = findViewById(R.id.seekbar);
         context = getApplicationContext();
         btn_start.setOnClickListener(new MyOnClickListener());
         btn_stop.setOnClickListener(new MyOnClickListener());
         btn_pause.setOnClickListener(new MyOnClickListener());
         btn_open.setOnClickListener(new MyOnClickListener());
-
+        seekbar.setOnSeekBarChangeListener(new MyOnSeekBarChangeListener());
+        seekbar.setVisibility(View.INVISIBLE);
+        tv_seekpos.setVisibility(View.INVISIBLE);
     }
     private Handler handler = new Handler(new Handler.Callback() {
         @Override
         public boolean handleMessage(Message msg) {
             switch (msg.what) {
-                case 0:
+                case MSG_UPDATE_PLAYPOSITION:
+                    int curposition = player.getCurrentPosition() / 1000; //get second
+                    int hours = (int) (curposition / 3600);
+                    int mins = (int)(curposition % 3600) / 60;
+                    int secs = (int)(curposition % 3600) % 60;
+                    tv_playpos.setText((hours < 10 ? "0":"") + hours +":"+ (mins < 10 ? "0":"") + mins +":"+ (secs < 10 ? "0":"") + secs);
+                    Log.d(TAG,"curposition " + curposition);
+
+                    seekbar.setProgress(curposition*1000/filedurtion);
+
                     break;
                 case 1:
                     break;
@@ -134,6 +156,11 @@ public class MainActivity extends AppCompatActivity {
                 Log.d(TAG,"player.start()ed " + mState);
                 mState = playState.STARTED;
                 player.setLooping(false);
+                filedurtion = player.getDuration()/1000;// second
+                int hours = (int) (filedurtion / 3600);
+                int mins = (int)(filedurtion % 3600) / 60;
+                int secs = (int)(filedurtion % 3600) % 60;
+                tv_filedur.setText((hours < 10 ? "0":"") + hours +":"+ (mins < 10 ? "0":"") + mins +":"+ (secs < 10 ? "0":"") + secs);
             };
         });
         player.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
@@ -148,13 +175,13 @@ public class MainActivity extends AppCompatActivity {
                 } else if (cyclePlay == cycleMode.cycleNone) {
                     playerStop();
                 }
-                Toast.makeText(MainActivity.this,"onCompletion "+ mState,Toast.LENGTH_SHORT).show();
+                //Toast.makeText(MainActivity.this,"onCompletion "+ mState,Toast.LENGTH_SHORT).show();
             }
         });
         player.setOnVideoSizeChangedListener(new MediaPlayer.OnVideoSizeChangedListener(){
             @Override
             public void onVideoSizeChanged(MediaPlayer mp, int width, int height){
-                Toast.makeText(MainActivity.this,"onVideoSizeChanged, w:" +  width+" h:" + height,Toast.LENGTH_SHORT).show();
+                //Toast.makeText(MainActivity.this,"onVideoSizeChanged, w:" +  width+" h:" + height,Toast.LENGTH_SHORT).show();
                 setSurfaceViewSize(width, height);
             }
         });
@@ -162,7 +189,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onSeekComplete(MediaPlayer mp){
                 Log.d(TAG,"onSeekComplete");
-                mState = playState.PLAYBACKCOMPLETED;
+                mState = playState.PAUSED;
                 playerPause();
             }
         });
@@ -191,18 +218,46 @@ public class MainActivity extends AppCompatActivity {
         public void onClick(View view) {
             if (view.getId()==R.id.imageButton_start) {
                 playerStart();
-                Toast.makeText(MainActivity.this,"onClick start",Toast.LENGTH_SHORT).show();
+                //Toast.makeText(MainActivity.this,"onClick start",Toast.LENGTH_SHORT).show();
             } else if (view.getId()==R.id.imageButton_stop) {
                 playerStop();
-                Toast.makeText(MainActivity.this,"onClick stop",Toast.LENGTH_SHORT).show();
+                //Toast.makeText(MainActivity.this,"onClick stop",Toast.LENGTH_SHORT).show();
             } else if (view.getId()==R.id.imageButton_pause) {
                 playerPause();
-                Toast.makeText(MainActivity.this,"onClick pause",Toast.LENGTH_SHORT).show();
+                //Toast.makeText(MainActivity.this,"onClick pause",Toast.LENGTH_SHORT).show();
             } else if (view.getId()==R.id.imageButton_open){
                 Intent intent = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Video.Media.EXTERNAL_CONTENT_URI);
                 intent.setDataAndType(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, "video/*");
                 startActivityForResult(intent, REQUEST_CODE_SELECT_VIDEO);
             }
+        }
+    }
+    class MyOnSeekBarChangeListener implements SeekBar.OnSeekBarChangeListener {
+        private int seek_postion;
+        @Override
+        public void onProgressChanged (SeekBar seekbar,int progress, boolean fromUser){
+            seek_postion = progress * filedurtion;
+            int postion = seek_postion / 1000;
+            int hours = (int) (postion / 3600);
+            int mins = (int)(postion % 3600) / 60;
+            int secs = (int)(postion % 3600) % 60;
+            tv_seekpos.setText((hours < 10 ? "0":"") + hours +":"+ (mins < 10 ? "0":"") + mins +":"+ (secs < 10 ? "0":"") + secs);
+            //tv_seekpos.setText("seek time: " + progress +" ‰");
+            //tv_playpos.setText("00:00:01");
+            //tv_filedur.setText(""+filedurtion);
+        }
+        @Override
+        public void onStartTrackingTouch (SeekBar seekbar){
+            tv_seekpos.setVisibility(View.VISIBLE);
+        }
+
+        @Override
+        public void onStopTrackingTouch (SeekBar seekbar){
+            tv_seekpos.setVisibility(View.INVISIBLE);
+            player.pause();
+            player.seekTo(seek_postion);
+            player.start();
+            Log.d(TAG,"seek to "+ seek_postion);
         }
     }
 
@@ -225,6 +280,7 @@ public class MainActivity extends AppCompatActivity {
                         long size = cursor.getLong(cursor.getColumnIndex(MediaStore.Video.Media.SIZE));
                         @SuppressLint("Range")
                         long duration = cursor.getLong(cursor.getColumnIndex(MediaStore.Video.Media.DURATION));
+
                         @SuppressLint("Range")
                         int width = cursor.getInt(cursor.getColumnIndex(MediaStore.Video.Media.WIDTH));
                         @SuppressLint("Range")
@@ -233,7 +289,7 @@ public class MainActivity extends AppCompatActivity {
                         //mText_duration.setText(getStrTime(duration));
                         //mText_size.setText(getVideoSize(size));
                         //mLinerLayout_video_infomation.setVisibility(View.VISIBLE);
-                        Toast.makeText(MainActivity.this, "onClick url :" + url, Toast.LENGTH_SHORT).show();
+                        //Toast.makeText(MainActivity.this, "onClick url :" + url, Toast.LENGTH_SHORT).show();
                         cursor.close();
                     }
                 }
@@ -260,7 +316,7 @@ public class MainActivity extends AppCompatActivity {
         //int surfaceHeight = surfaceView.getHeight();
         int surfaceWidth = dm.widthPixels;
         int surfaceHeight = dm.heightPixels;
-                Toast.makeText(MainActivity.this,"onVideoSizeChanged, w:" +  surfaceWidth+" h:" + surfaceHeight+" orien:"+getResources().getConfiguration().orientation,Toast.LENGTH_SHORT).show();
+                //Toast.makeText(MainActivity.this,"onVideoSizeChanged, w:" +  surfaceWidth+" h:" + surfaceHeight+" orien:"+getResources().getConfiguration().orientation,Toast.LENGTH_SHORT).show();
         Log.d(TAG,"onVideoSizeChanged, w:" +  surfaceWidth+" h:" + surfaceHeight
                 +" match_parent "+ConstraintLayout.LayoutParams.MATCH_PARENT
                 +" orien:"+getResources().getConfiguration().orientation);
@@ -278,7 +334,7 @@ public class MainActivity extends AppCompatActivity {
         surfaceView.setLayoutParams(params2);
     }
     private void playerStart() {
-
+        seekbar.setVisibility(View.VISIBLE);
         Log.d(TAG,"playerStart " + mState);
         if (mState == playState.STARTED) {
             return;
@@ -286,6 +342,7 @@ public class MainActivity extends AppCompatActivity {
             player.start();
             Log.d(TAG,"player.start()ed " + mState);
             mState = playState.STARTED;
+
         } else if (mState == playState.IDLE) {
 
             if (mPlayMode == playMode.modeMediaplayer) {
@@ -302,12 +359,13 @@ public class MainActivity extends AppCompatActivity {
                     player.prepare();
                     mState = playState.PREPARING;
 
+
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
             }
         } else {
-            Toast.makeText(MainActivity.this,"playerStart error state",Toast.LENGTH_SHORT).show();
+            //Toast.makeText(MainActivity.this,"playerStart error state",Toast.LENGTH_SHORT).show();
         }
     }
 /*
@@ -325,6 +383,8 @@ public class MainActivity extends AppCompatActivity {
     }
 */
     private void playerStop() {
+        seekbar.setVisibility(View.INVISIBLE);
+
         Log.d(TAG,"playerStop " + mState);
         if (mState == playState.IDLE && mState != playState.STOPED) {
             return;
@@ -343,5 +403,31 @@ public class MainActivity extends AppCompatActivity {
         player.pause();
         mState = playState.PAUSED;
     }
+    private class playerRunnable implements Runnable {
+        long cur_time;
+        long last_time = System.currentTimeMillis();
+        @Override
+        public void run() {
+            while (true) {
+                Log.d(TAG, "mState: "+mState);
+                if (mState == playState.STARTED || mState == playState.PAUSED) {
+                    cur_time = System.currentTimeMillis();
+                    if (cur_time - last_time > 500) {
+                        last_time = cur_time;
+                        handler.sendEmptyMessage(MSG_UPDATE_PLAYPOSITION);
+                    }
+                } else if (mState == playState.STOPED) {
+                    break;
+                }
+
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
 
 }

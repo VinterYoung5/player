@@ -13,6 +13,42 @@
         app:layout_constraintTop_toTopOf="parent"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
+    <SeekBar
+        android:id="@+id/seekbar"
+        android:layout_width="match_parent"
+        android:layout_height="30dp"
+        android:max="1000"
+        android:progress="0"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/imageButton_open"
+        tools:ignore="MissingConstraints"
+        />
+    <TextView
+        android:id="@+id/textView_playpos"
+        android:layout_width="wrap_content"
+        android:layout_height="25dp"
+        android:textSize="20sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/seekbar"
+        tools:ignore="MissingConstraints" />
+    <TextView
+        android:id="@+id/textView_seekpos"
+        android:layout_width="wrap_content"
+        android:layout_height="25dp"
+        android:textSize="20sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/seekbar"
+        tools:ignore="MissingConstraints" />
+    <TextView
+        android:id="@+id/textView_filedurtion"
+        android:layout_width="wrap_content"
+        android:layout_height="25dp"
+        android:textSize="20sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/seekbar"
+        tools:ignore="MissingConstraints" />
 
     <ImageButton
         android:id="@+id/imageButton_open"
