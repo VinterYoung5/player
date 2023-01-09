@@ -1,4 +1,4 @@
-package com.example.player;
+package com.vinter.media;
 
 import android.content.Context;
 

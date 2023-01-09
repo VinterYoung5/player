@@ -3,11 +3,11 @@ plugins {
 }
 
 android {
-    namespace 'com.example.player'
+    namespace 'com.vinter.media'
     compileSdk 32
 
     defaultConfig {
-        applicationId "com.example.player"
+        applicationId "com.vinter.media"
         minSdk 31
         targetSdk 32
         versionCode 1

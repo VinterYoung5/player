@@ -1,4 +1,4 @@
-package com.example.player;
+package com.vinter.media;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -12,7 +12,6 @@ import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.res.AssetFileDescriptor;
 import android.database.Cursor;
-import android.media.MediaFormat;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -24,14 +23,14 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.media.MediaPlayer;
 import android.view.View;
-import android.widget.Button;
 import android.widget.ImageButton;
-import android.widget.Toast;
 
 import java.io.IOException;
 import android.widget.SeekBar;
-import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
+
+import com.vinter.media.R;
+
 public class MainActivity extends AppCompatActivity {
 
     public static final int REQUEST_CODE_SELECT_VIDEO = 0x100;

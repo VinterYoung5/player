@@ -1,4 +1,4 @@
-package com.example.player;
+package com.vinter.media;
 
 import org.junit.Test;
 
