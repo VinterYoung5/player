@@ -35,7 +35,7 @@ public class MainActivity extends AppCompatActivity {
 
     public static final int REQUEST_CODE_SELECT_VIDEO = 0x100;
     private static final int MSG_UPDATE_PLAYPOSITION = 0x1000;
-    private static final String TAG = "Yangwen";
+    private static final String TAG = "Vmedia";
     private  String url;
     private SurfaceView surfaceView;
     private MediaPlayer player;
